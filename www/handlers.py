@@ -196,43 +196,6 @@ def api_save_project(request, *, id, title, summary):
     yield from project.update()
     return project
 
-#工程浏览页路由
-@get('/project/view/{id}')
-def view_project(id):
-    return {
-        '__template__': 'project_view.html',
-        'id': id,
-        'action' : 'api/project/'
-    }
-#图表创建页路由
-@get('/charts/create/{chartType}')
-def create_chart(chartType):
-    if chartType == "bar":
-        return {
-            '__template__': 'chart_edit/bar_edit.html',
-            'project_id': '',
-            'chart_id': '',
-            'action': '/api/chart/create'
-            }
-#图表创建API
-@post('/api/chart/create')
-def api_create_chart(request , *, type, description, project_id,**kw):
-    projectID = ''
-    if project_id == '':
-        project = Project(user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image, title='', summary='', status=False)
-        yield from project.save()
-        projectID = project.id
-    option = json.dumps(kw, ensure_ascii=False).encode('utf-8')
-    chart = Chart(user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image, project_id=projectID.strip(), type=type.strip(), description=description.strip(), status=False, option = option)
-    yield from chart.save()
-    chart.option = markdown2.markdown(chart.option)
-    return chart
-
-#图表修改页路由
-@get('/charts/edit/{chartID}')
-def edit_chart(chartID):
-    pass
-
 #日志管理页路由
 @get('/projects/manage')
 def manage_projects(*, page='1'):
@@ -255,7 +218,9 @@ def api_projects(*, page='1'):
 @get('/api/project/{id}')
 def api_get_project(*, id):
     project = yield from Project.find(id)
-    charts = yield from Chart.findAll('project_id=?', [id], orderBy='created_at')
+    charts = yield from Chart.findAll('project_id=?', [id], orderBy='created_at desc')
+    for chart in charts:
+        chart.option = json.loads(chart.option)
     return dict(project=project, charts=charts)
 
 #工程删除API
@@ -264,4 +229,67 @@ def api_delete_project(request, *, id):
     check_admin(request)
     project = yield from Project.find(id)
     yield from project.remove()
+    return dict(id=id)
+
+#工程浏览页路由
+@get('/project/view/{id}')
+def view_project(id):
+    return {
+        '__template__': 'project_view.html',
+        'id': id,
+        'action' : 'api/project/'
+    }
+
+#图表创建页路由
+@get('/{id}/chart/create/{chartType}')
+def create_chart(chartType, id):
+    if chartType == "bar":
+        return {
+            '__template__': 'chart_edit/bar_edit.html',
+            'project_id': id,
+            'chart_id': '',
+            'action': '/api/chart/create'
+            }
+#图表创建API
+@post('/api/chart/create')
+def api_create_chart(request , *, type, description, project_id, option):
+    Option = json.dumps(option, ensure_ascii=False).encode('utf-8')
+    chart = Chart(user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image, project_id=project_id.strip(), type=type.strip(), description=description.strip(), status=False, option = Option)
+    yield from chart.save()
+    chart.option = markdown2.markdown(chart.option)
+    return chart
+
+#图表修改页路由
+@get('/chart/edit/{chartType}/{id}')
+def edit_chart(chartType, id):
+    if chartType == "bar":
+        return {
+            '__template__': 'chart_edit/bar_edit.html',
+            'project_id': '',
+            'chart_id': id,
+            'action': '/api/chart/save/'
+            }
+#图表获取API
+@get('/api/chart/{id}')
+def api_get_chart(*,id):
+    chart = yield from Chart.find(id)
+    chart.option = json.loads(chart.option)
+    return chart
+#图表保存API
+@post('/api/chart/save/{id}')
+def api_save_chart(request , *, type, description, id, option):
+    chart = yield from Chart.find(id)
+    chart.status = True
+    chart.option = json.dumps(option, ensure_ascii=False).encode('utf-8')
+    chart.description = description
+    yield from chart.update()
+    chart.option = markdown2.markdown(chart.option)
+    return chart
+
+#图表删除API
+@post('/api/chart/delete/{id}')
+def api_delete_chart(request, *, id):
+    check_admin(request)
+    chart = yield from Chart.find(id)
+    yield from chart.remove()
     return dict(id=id)

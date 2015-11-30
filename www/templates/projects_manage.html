@@ -54,7 +54,6 @@ $(function() {
 {% block navbar %}
 <ul class="uk-navbar-nav">
     <li ><a href="/"><i class="uk-icon-home"></i> 首页</a></li>
-    <li ><a href="/project/create"><i class="uk-icon-file"></i> 创建工程</a></li>
     <li class="uk-active"><a href="/projects/manage"><i class="uk-icon-book"></i> 我的工程</a></li>
 </ul>
 {% endblock %}
@@ -70,7 +69,8 @@ $(function() {
     <table class="uk-table uk-table-hover">
         <thead>
             <tr>
-                <th class="uk-width-4-10">工程标题</th>
+                <th class="uk-width-3-10">工程标题</th>
+                <th class="uk-width-1-10">状态</th>
                 <th class="uk-width-3-10">最新保存时间</th>
                 <th class="uk-width-1-10">操作</th>
             </tr>
@@ -79,6 +79,9 @@ $(function() {
             <tr v-for="project in projects">
                 <td>
                     <a v-on:click="view_project(project)" v-text="project.title"></a>
+                </td>
+                <td>
+                    <span v-text="project.status"></span>
                 </td>
                 <td>
                     <span v-text="project.created_at.toDateTime()"></span>

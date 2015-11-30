@@ -28,7 +28,11 @@ function initVM(data) {
                 }
             },
             goto_chart_edit: function(msg) {
-                return location.assign('/charts/create/' + msg);                
+                event.preventDefault();
+                var $form = $('#vm').find('form');
+                $form.postJSON(action+ID, this.$data, function (err, r) {
+                    return window.open('/'+ ID + '/chart/create/' + msg);
+                });
             },
             cancel: function(event) {
                 return location.assign('/');
@@ -41,9 +45,22 @@ function initVM(data) {
                         $form.showFormError(err);
                     }
                     else {
-                        return location.assign('/project/view/'+ID);
+                        return location.assign('/project/edit/' + ID);
                     }
                 });
+            },
+            edit_chart: function (chart) {
+                location.assign('/chart/edit/' + chart.type + '/' + chart.id);
+            },
+            delete_chart: function(chart) {
+                if (confirm('确认要删除“' + chart.option.title + '”？删除后不可恢复！')) {
+                    postJSON('/api/chart/delete/' + chart.id, function (err, r) {
+                        if (err) {
+                            return alert(err.message || err.error || err);
+                        }
+                        refresh();
+                    });
+                }                
             }
         }
     });
@@ -67,7 +84,6 @@ $(function () {
 {% block navbar %}
 <ul class="uk-navbar-nav">
     <li ><a href="/"><i class="uk-icon-home"></i> 首页</a></li>
-    <li class="uk-active"><a href="/project/create"><i class="uk-icon-file"></i> 创建工程</a></li>
     <li ><a href="/projects/manage"><i class="uk-icon-book"></i> 我的工程</a></li>
 </ul>
 {% endblock %}
@@ -96,13 +112,13 @@ $(function () {
 
         <div class="uk-form-row uk-width-1-4">
             <button v-on:click="save" class="uk-button uk-button-primary uk-width-4-6" style="height:75px;margin:12px 0 15px 0"><i class="uk-icon-save"></i> 保存</button>
-            <botton v-on:click="cancel" class="uk-button uk-width-4-6" style="height:30px"><i class="uk-icon-times"></i> 取消</botton>
+            <botton v-on:click="cancel" class="uk-button uk-width-4-6" style="height:30px"><i class="uk-icon-times"></i> 退出</botton>
         </div>
 
         <div class="uk-width-1-1"style="margin: 20px 0 15px 0">
             <button v-on:click="ChartBoxCtr" class="uk-button uk-button-primary"><i class="uk-icon-plus"></i> 添加图表</button>
             <div id="chart_box" class="uk-width-1-1 " style="display: none; margin:10px 0 0 0">
-                <a target="_blank" href="/charts/create/bar" class="uk-width-1-10"><img src="/static/img/bar.png"></a>
+                <a v-on:click="goto_chart_edit('bar')" class="uk-width-1-10"><img src="/static/img/bar.png"></a>
             </div>        
         </div>
 
@@ -118,7 +134,7 @@ $(function () {
                 <tbody>
                     <tr v-for="chart in charts" >
                         <td>
-                            <a target="_blank" v-attr="href: '/" v-text="chart.id"></a>
+                            <a target="_blank" v-attr="href: '/" v-text="chart.option.title"></a>
                         </td>
                         <td>
                             <span v-text="chart.created_at.toDateTime()"></span>

@@ -14,7 +14,13 @@ function initVM(data) {
             project: data.project,
             charts: data.charts
         },
-        methods: {
+        created: function() {
+            for (var i = this.charts.length-1; i>=0; i--) {
+                $("#showbox").append("<div id = 'chart" + i.toString() + "'></div>");
+                $("#chart"+i.toString()).append("<div id = 'showchart" + i.toString() + "' class='uk-width-1-1' style='height:300px'></div>");
+                makeChart("showchart" + i.toString(), this.charts[i].type, this.charts[i].option);
+                $("#chart"+i.toString()).append("<p>" + this.charts[i].description +"</p>");
+            };
         }
     });
     $('#vm').show();
@@ -36,7 +42,6 @@ $(function () {
 {% block navbar %}
 <ul class="uk-navbar-nav">
     <li ><a href="/"><i class="uk-icon-home"></i> 首页</a></li>
-    <li ><a href="/project/create"><i class="uk-icon-file"></i> 创建工程</a></li>
     <li ><a href="/projects/manage"><i class="uk-icon-book"></i> 我的工程</a></li>
 </ul>
 {% endblock %}
@@ -48,8 +53,8 @@ $(function () {
         <p class="uk-article-meta">发表于<span class="uk-article-meta" v-text="project.created_at | datetime"></span></p>
         <h3>摘要</h3>
         <p v-text="project.summary"></p>
+        <div id="showbox"></div>
     </article>
-    <hr class="uk-article-divider">
 </div>
 
 <div class="uk-width-medium-1-4">
