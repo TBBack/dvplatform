@@ -1,0 +1,169 @@
+{% extends '__base__.html' %}
+
+{% block title %}编辑图表{% endblock %}
+
+{% block beforehead %}
+
+<script>
+
+var
+    Chart_id = '{{ chart_id }}',
+    Project_id = '{{ project_id }}',
+    action = '{{ action }}';
+var vm = {};
+var BarOption ={};
+
+function str2strArray(str) {
+    var strArray = new Array();
+    if (str != '') {
+        strArray = str.split(",");
+    };
+    return strArray;
+}
+function str2numArray(str) {
+    var strArray= new Array();
+    var numAarry = new Array();
+    if (str != '') {
+        strArray = str.split(",");
+        for (var i = 0; i < strArray.length; i++) {
+            numAarry.push(Number(strArray[i]));
+        };
+    };
+    return numAarry;
+}
+
+function initVM(chart) {
+    vm = new Vue({
+        el: '#vm',
+        data: chart,
+        methods: {
+            prview: function(event) {
+                event.preventDefault();
+                BarOption = new initOption('main', this.title, this.subtitle, str2strArray(this.legend), str2strArray(this.x_axis), str2numArray(this.y_axis), this.y_unit);
+                Bar(BarOption);                
+            },
+            submit: function (event) {
+                event.preventDefault();
+                var $form = $('#vm').find('form');
+                $form.postJSON(action, this.$data, function (err, r) {
+                    if (err) {
+                        $form.showFormError(err);
+                    }
+                    else {
+                        return location.assign('/project/edit/'+r.project_id);
+                    }
+                });
+            },
+            cancel: function (event) {
+                window.close();
+            }
+        }
+    });
+    $('#vm').show();
+}
+
+$(function () {
+    if (Chart_id) {
+        getJSON('/api/chart/' +Chart_id, function (err, chart) {
+            if (err) {
+                return fatal(err);
+            }
+            $('#loading').hide();
+            initVM(chart);
+        });
+    }
+    else {
+        $('#loading').hide();
+        initVM({
+            type: 'bar',
+            project_id: Project_id,
+            title: '',
+            subtitle: '',
+            legend: [],
+            x_axis: [],
+            y_axis: [],
+            y_unit: '',
+            description:''
+        });
+        BarOption = new initOption('main', '标题', '副标题', ['图例名称'], ['x_1', 'x_2', 'x_3'], [123,321,123], '单位');
+        Bar(BarOption);
+    }
+});
+
+</script>
+{% endblock %}
+
+{% block navbar %}
+<ul class="uk-navbar-nav">
+    <li ><a href="/"><i class="uk-icon-home"></i> 首页</a></li>
+    <li class="uk-active"><a href="/project/create"><i class="uk-icon-file"></i> 创建工程</a></li>
+    <li ><a href="/project/manage"><i class="uk-icon-book"></i> 我的工程</a></li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div id="error" class="uk-width-1-1"></div>
+
+<div id="loading" class="uk-width-1-1 uk-text-center">
+    <span><i class="uk-icon-spinner uk-icon-medium uk-icon-spin"></i> 正在加载...</span>
+</div>
+
+<div id="vm" class="uk-width-1-1">
+    <form  v-on:submit="submit" class="uk-form uk-form-stacked uk-grid" >
+        <div class="uk-width-3-10">
+            <div class="uk-alert uk-alert-danger uk-hidden"></div>
+            <div class="uk-form-row">
+                <label class="uk-form-label">&nbsp;标题</label>
+                <div class="uk-form-controls">
+                    <input v-model="title" name="title" type="text" placeholder="[选填] 标题" class="uk-width-1-1">
+                </div>
+            </div>
+            <div class="uk-form-row">
+                <label class="uk-form-label">&nbsp;副标题</label>
+                <div class="uk-form-controls">
+                    <input v-model="subtitle" name="subtitle" type="text" placeholder="[选填] 副标题" class="uk-width-1-1">
+                </div>
+            </div>
+            <div class="uk-form-row">
+                <label class="uk-form-label">&nbsp;图例名称</label>
+                <div class="uk-form-controls">
+                    <input v-model="legend" name="legend" type="text" placeholder="[选填] 图例名称" class="uk-width-1-1">
+                </div>
+            </div>
+             <div class="uk-form-row">
+                <label class="uk-form-label" style="color:red">&nbsp;*X轴</label>
+                <div class="uk-form-controls">
+                    <input v-model="x_axis" name="x_axis" type="text" placeholder="[必填] 以英文逗号“,”间隔，例如：苹果,小米,华为" class="uk-width-1-1">
+                </div>
+            </div>
+             <div class="uk-form-row">
+                <label class="uk-form-label" style="color:red">&nbsp;*Y轴</label>
+                <div class="uk-form-controls">
+                    <input v-model="y_axis" name="y_axis" type="text" placeholder="[必填] 以英文逗号“,”间隔，例如：123,321,123" class="uk-width-1-1">
+                </div>
+            </div>
+            <div class="uk-form-row">
+                <label class="uk-form-label">&nbsp;Y轴单位</label>
+                <div class="uk-form-controls">
+                    <input v-model="y_unit" name="y_unit" type="text" placeholder="[选填] Y轴单位" class="uk-width-1-1">
+                </div>
+            </div>
+            <div class="uk-form-row">
+                <button v-on:click="prview" type="button" class="uk-button uk-button-success"><i class="uk-icon-play-circle"></i> 预览</button>
+                <button v-on:click="cancel" type="button" class="uk-button uk-float-right"><i class="uk-icon-times"></i> 取消</button>
+                <button type="submit" class="uk-button uk-button-primary uk-float-right" style="margin-right:5px"><i class="uk-icon-save"></i> 保存</button>
+            </div>
+        </div>
+        <div class="uk-width-7-10">
+            <div id="main" class="uk-width-1-1" style="height:300px; margin:10px 0 0 0"></div>
+            <div class="uk-form-row">
+                <label class="uk-form-label">&nbsp;图表描述</label>
+                <div class="uk-form-controls">
+                    <textarea v-model="description" rows="3" name="description" placeholder="" class="uk-width-1-1"></textarea>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+    
+{% endblock %}

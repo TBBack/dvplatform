@@ -1,0 +1,148 @@
+{% extends '__base__.html' %}
+
+{% block title %}工程编辑{% endblock %}
+
+{% block beforehead %}
+
+<script>
+var ID = '{{ id }}',action = '{{ action }}';
+var chart_box_is_open = false;
+
+function initVM(data) {
+    vm = new Vue({
+        el: '#vm',
+        data: {
+            project: data.project,
+            charts: data.charts
+        },
+        methods: {
+            ChartBoxCtr: function(event) {
+                event.preventDefault();
+                if(chart_box_is_open){
+                    $('#chart_box').css('display', 'none');
+                    chart_box_is_open = false;
+                }
+                else{
+                    $('#chart_box').css('display', 'block');
+                    chart_box_is_open = true;
+                }
+            },
+            goto_chart_edit: function(msg) {
+                return location.assign('/charts/create/' + msg);                
+            },
+            cancel: function(event) {
+                return location.assign('/');
+            },
+            save: function (event) {
+                event.preventDefault();
+                var $form = $('#vm').find('form');
+                $form.postJSON(action+ID, this.$data, function (err, r) {
+                    if (err) {
+                        $form.showFormError(err);
+                    }
+                    else {
+                        return location.assign('/project/view/'+ID);
+                    }
+                });
+            }
+        }
+    });
+    $('#vm').show();
+}
+
+$(function () {
+    getJSON('/api/project/' + ID, function (err, Response) {
+        if (err) {
+            return fatal(err);
+        }
+        $('#loading').hide();
+        initVM(Response);
+    });
+});
+
+</script>
+
+{% endblock %}
+
+{% block navbar %}
+<ul class="uk-navbar-nav">
+    <li ><a href="/"><i class="uk-icon-home"></i> 首页</a></li>
+    <li class="uk-active"><a href="/project/create"><i class="uk-icon-file"></i> 创建工程</a></li>
+    <li ><a href="/projects/manage"><i class="uk-icon-book"></i> 我的工程</a></li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div id="error" class="uk-width-1-1"></div>
+
+<div id="loading" class="uk-width-1-1 uk-text-center">
+    <span><i class="uk-icon-spinner uk-icon-medium uk-icon-spin"></i> 正在加载...</span>
+</div>
+
+<div id="vm" class="uk-width-3-4">
+    <form class="uk-form uk-form-stacked uk-grid">
+        <div class="uk-alert uk-alert-danger uk-hidden"></div>
+
+        <div class="uk-form-row uk-width-3-4">
+            <label class="uk-form-label">&nbsp;标题</label>
+            <div class="uk-form-controls">
+                <textarea v-model="title" rows="1" name="title" placeholder="[*必填部分]  请为您的工程起个名字" v-text="project.title" class="uk-width-1-1"></textarea>
+            </div>
+            <label class="uk-form-label" style="margin-top:10px">&nbsp;摘要</label>
+            <div class="uk-form-controls" >
+                <textarea v-model="summary" rows="3" name="summary" placeholder="[*必填部分]  简要描述一下您的工程，此部分将出现在首页" v-text="project.summary" class="uk-width-1-1"></textarea>
+            </div>
+        </div>
+
+        <div class="uk-form-row uk-width-1-4">
+            <button v-on:click="save" class="uk-button uk-button-primary uk-width-4-6" style="height:75px;margin:12px 0 15px 0"><i class="uk-icon-save"></i> 保存</button>
+            <botton v-on:click="cancel" class="uk-button uk-width-4-6" style="height:30px"><i class="uk-icon-times"></i> 取消</botton>
+        </div>
+
+        <div class="uk-width-1-1"style="margin: 20px 0 15px 0">
+            <button v-on:click="ChartBoxCtr" class="uk-button uk-button-primary"><i class="uk-icon-plus"></i> 添加图表</button>
+            <div id="chart_box" class="uk-width-1-1 " style="display: none; margin:10px 0 0 0">
+                <a target="_blank" href="/charts/create/bar" class="uk-width-1-10"><img src="/static/img/bar.png"></a>
+            </div>        
+        </div>
+
+        <div id="chart_list" class="uk-width-1-1" style="min-height: 300px">
+            <table class="uk-table uk-table-hover">
+                <thead>
+                    <tr>
+                        <th class="uk-width-5-10">图表名称</th>
+                        <th class="uk-width-4-10">创建时间</th>
+                        <th class="uk-width-1-10">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="chart in charts" >
+                        <td>
+                            <a target="_blank" v-attr="href: '/" v-text="chart.id"></a>
+                        </td>
+                        <td>
+                            <span v-text="chart.created_at.toDateTime()"></span>
+                        </td>
+                        <td>
+                            <a href="#0" v-on:click="edit_chart(chart)"><i class="uk-icon-edit"></i>
+                            <a href="#0" v-on:click="delete_chart(chart)"><i class="uk-icon-trash-o"></i>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div v-component="pagination" v-with="page"></div>
+        </div>
+    </form>
+</div>
+<div class="uk-width-1-4">
+    <div class="uk-panel uk-panel-header">
+        <h3 class="uk-panel-title">友情链接</h3>
+        <ul class="uk-list uk-list-line">
+            <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="http://www.getuikit.net/">UIkit</a></li>
+            <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="http://cn.vuejs.org/">Vue.js</a></li>
+            <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="https://www.python.org/">Python</a></li>
+            <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="http://echarts.baidu.com/">ECharts</a></li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

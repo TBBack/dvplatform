@@ -1,0 +1,67 @@
+{% extends '__base__.html' %}
+
+{% block title %}工程浏览{% endblock %}
+
+{% block beforehead %}
+<script>
+
+var ID = '{{ id }}', action = '{{ action }}';
+var vm = {};
+function initVM(data) {
+    vm = new Vue({
+        el: '#vm',
+        data: {
+            project: data.project,
+            charts: data.charts
+        },
+        methods: {
+        }
+    });
+    $('#vm').show();
+}
+
+$(function () {
+    getJSON('/api/project/' + ID, function (err, Response) {
+        if (err) {
+            return fatal(err);
+        }
+        $('#loading').hide();
+        initVM(Response);
+    });
+});
+
+</script>
+{% endblock %}
+
+{% block navbar %}
+<ul class="uk-navbar-nav">
+    <li ><a href="/"><i class="uk-icon-home"></i> 首页</a></li>
+    <li ><a href="/project/create"><i class="uk-icon-file"></i> 创建工程</a></li>
+    <li ><a href="/projects/manage"><i class="uk-icon-book"></i> 我的工程</a></li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div id="vm" class="uk-width-medium-3-4">
+    <article class="uk-article">
+        <h2><a href="/project/view/{{ ID }}" v-text="project.title" ></a></h2>
+        <p class="uk-article-meta">发表于<span class="uk-article-meta" v-text="project.created_at | datetime"></span></p>
+        <h3>摘要</h3>
+        <p v-text="project.summary"></p>
+    </article>
+    <hr class="uk-article-divider">
+</div>
+
+<div class="uk-width-medium-1-4">
+    <div class="uk-panel uk-panel-header">
+        <h3 class="uk-panel-title">友情链接</h3>
+        <ul class="uk-list uk-list-line">
+            <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="/">编程</a></li>
+            <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="/">读书</a></li>
+            <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="/">Python教程</a></li>
+            <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="/">Git教程</a></li>
+        </ul>
+    </div>
+</div>
+
+{% endblock %}
